@@ -16,5 +16,11 @@ python database.py
  python bot.py
 ```
 
+# Screenshots
+
+# <img src="https://raw.githubusercontent.com/sdkarimi/airdrop/main/screenshot/img1.jpg" alt="screen_shot" width="150"/>  
+
+<img src="https://raw.githubusercontent.com/sdkarimi/airdrop/main/screenshot/img2.jpg" alt="screen_shot" width="150"/>  
+
 # contact with me: 
 - Telegram UserName: @Dev_Lap

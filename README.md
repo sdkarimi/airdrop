@@ -13,5 +13,6 @@ And first, to build the necessary file databases:
 python database.py
 =========================
 and run the bot
-=========================
+
 python bot.py
+=========================

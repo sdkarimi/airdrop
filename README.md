@@ -6,9 +6,7 @@
 pip install python-telegram-bot==13.11 
 pip install db-sqlite3
 ```
-## Edit the bot.py file.
-
-## And first, to build the necessary file databases:
+## Edit the bot.py file. And first, to build the necessary file databases:
 ```python
 python database.py
 ```

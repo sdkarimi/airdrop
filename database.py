@@ -14,7 +14,6 @@ def create_table_users():
                 `balance` INTEGER NOT NULL
             )
         """
-        # `link` TEXT NOT NULL UNIQUE
         try:
             cursor.execute(create_sql)
         except sqlite3.ProgrammingError as e:

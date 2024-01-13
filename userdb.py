@@ -1,4 +1,3 @@
-from re import S, U
 import sqlite3
 from sqlite3 import ProgrammingError as pe
 

@@ -1,8 +1,3 @@
-from cmath import exp
-from distutils.log import error
-from http.client import BAD_REQUEST, UNAUTHORIZED
-from select import select
-import telegram
 from telegram.ext import (
     Updater, MessageHandler,\
     CallbackQueryHandler, ConversationHandler,\
@@ -33,7 +28,7 @@ def start_m(update,context):
     text = update.message.text
     chat_id=update.effective_chat.id
     if text :
-        context.bot.send_message(chat_id ,"ربات خاموش شد \n منتظر راند بعدی ما باشید . ")
+        context.bot.send_message(chat_id ,"Bot shut down \n Stay tuned for our next round. ")
 @show_chat_action(ChatAction.TYPING)
 def startm(update, context):
     update.message.reply_text("Hello\nPlease enter your username: ")
@@ -172,7 +167,7 @@ def support_answer(update,context):
         return SEND_MESSAGE_SUPPORT
     except Exception as e:
              print(e.with_traceback)
-             update.message.reply_text(" مشکلی پیش اومد")
+             update.message.reply_text(" There was a problem")
              show_button(update, context)
              return MAIN_STATE
              
@@ -188,7 +183,7 @@ def send_msg_support(update,context):
             
     except Exception as e:
              print(e.with_traceback)
-             update.message.reply_text(" مشکلی پیش اومد")
+             update.message.reply_text(" There was a problem")
              show_button(update, context)
              return MAIN_STATE
 
@@ -234,37 +229,4 @@ def error_handler(update, context):
     error = context.error
     
     print(error)
-def main():
-    #
-    updater = Updater("5359297975:AAH1MkunGAlOMumUJpiANsQa6GeOejkRaP4")
-    dp = updater.dispatcher
 
-    conv = ConversationHandler(
-        entry_points=[CommandHandler('admin', startm)],
-        states={
-            NAME_STATE:[MessageHandler(Filters.text & ~Filters.command, name_state)],
-            PASS_STATE:[MessageHandler(Filters.text &~ Filters.command, pass_state)],
-            MAIN_STATE:[CallbackQueryHandler(main_state)],
-            GET_MESSAGE_STATE:[MessageHandler(Filters.text &~ Filters.command, get_message_state)],
-            GET_IMAGE_STATE:[MessageHandler(Filters.photo, get_image_state)],
-            NUMBER_USER:[MessageHandler(~Filters.command,number_user)],
-            GET_MESSAGE_STATE_CHATID:[MessageHandler(Filters.text &~ Filters.command, support_answer)],
-            SEND_MESSAGE_SUPPORT:[MessageHandler(Filters.text &~ Filters.command,send_msg_support)],
-           
-            ConversationHandler.TIMEOUT:[MessageHandler(Filters.all, time_out)]
-        },
-        fallbacks=[CommandHandler('done', done)],
-        conversation_timeout=TIMEOUT_VALUE
-    )
-
-    convm=CommandHandler("start",start_m)
-    
-    dp.add_error_handler(error_handler)
-    dp.add_handler(convm)
-    dp.add_handler(conv)
-    
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()

@@ -3,7 +3,6 @@ from telegram import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeybo
 import threading
 from functools import wraps
 from userdb import *
-import re
 from mbot import * 
 import random
 
@@ -12,7 +11,8 @@ import random
 JOIN_STATE, ONE, TWO, WALLET_STATE, GET_BONUS , SET_WALLET , GET_WALLET= range(7)
 
 base_link = "URL_your_BOT"
-
+Wallet_pay=00000000000
+TOKEN="Your Token"
 
 def show_chat_action(action):
     def decorator(func):
@@ -31,9 +31,8 @@ def start(update, context):
         context.user_data['args'] = context.args[0]
     x=random.randint(50,100)
     y=random.randint(0,50)
-    global a
-    a=x-y
-    update.message.reply_text(f'به ربات ما خوش اومدی 😘 \n حاصل عبارت ریز رو بفرست:  \n {x}-{y} =?')
+    context.user_data['verify']=x-y
+    update.message.reply_text(f'Welcome to our robot 😘 \n Send the result of the following statement: \n {x}-{y} =?')
     return ONE
     
    
@@ -45,19 +44,17 @@ def menus(update,context):
     button_list = []
     i=1
     for each in link:
-        button_list.append(InlineKeyboardButton(f"کانال{i}", url = each))
+        button_list.append(InlineKeyboardButton(f"Channel{i}", url = each))
         i+=1
         
-    button_list.append(InlineKeyboardButton(f"YOURCHANNEL(CHANNEL_PAID)", url = "URL_CHANNEL"))
+   
     buttons=build_menu(button_list,n_cols=2)
     buttons.append([InlineKeyboardButton('I joined', callback_data=5)])
-
     reply_markup=InlineKeyboardMarkup(buttons) 
-    context.bot.send_message(chat_id=update.message.chat_id, text='Please join the following groups:',reply_markup=reply_markup)
-
+    context.bot.send_message(chat_id=update.message.chat_id, text='Please subscribe to the following channels:',reply_markup=reply_markup)
 
 def build_menu(buttons,n_cols,header_buttons=None,footer_buttons=None):
-  menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)   ]
+  menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
   if header_buttons:
     menu.insert(0, header_buttons)
   if footer_buttons:
@@ -65,19 +62,19 @@ def build_menu(buttons,n_cols,header_buttons=None,footer_buttons=None):
   return menu
 
 
+
 @show_chat_action(ChatAction.TYPING)
 def one(update, context):
     chat_id= update.effective_chat.id
     text=update.message.text
-  
-    if a==int(text):
 
+    if text==str(context.user_data['verify']):
         menus(update,context)
         return JOIN_STATE
     else:
         
         update.message.reply_text('You guessed wrong 😓 \n Send the correct amount again')
-        return ONE
+        
      
 
 
@@ -97,10 +94,12 @@ def join_state(update, context):
             channels.append(int(i))
         flag = True
         for channel in channels:
-            result = context.bot.get_chat_member(channel, chat_id).status
-            if result.status != "member" and result.status != "administrator" and result.status != 'creator' and result.status !='restricted':
+            
+            result = context.bot.get_chat_member(channel, chat_id)
+    
+            if result.status != "member" and result.status != "administrator" and result.status != 'creator':
                 flag = False
-                print(flag)
+                
           
         if flag:
             if not select(chat_id):
@@ -108,7 +107,6 @@ def join_state(update, context):
                         arg=context.user_data
                         if arg.get('args'):
                             flags = select(context.user_data['args'])
-                    
                             if flags:
                                     if add_sub_number(context.user_data['args']) and add_best_sub_number(context.user_data['args']) and set_balance(context.user_data['args']):
                                         r=str(select_ref(context.user_data['args'])[0])
@@ -135,7 +133,6 @@ def join_state(update, context):
 def get_bonus(update, context):
     chat_id = update.effective_chat.id
     text=update.message.text
-    print(select_bonus(chat_id)[0])
     if text=='🔱Claim 50000 tokens🔱':
         if select_bonus(chat_id)[0]==0 :
             insert_bonus(1,chat_id)
@@ -151,17 +148,17 @@ def get_bonus(update, context):
 @show_chat_action(ChatAction.TYPING)
 def show_buttons(update, context):
    
-    keys=[['User information👤'],['لینک زیرمجموعه‌گیری🚸','📥برداشت'],['💳کیف پول💳']]
+    keys=[['User information👤'],['👨‍👩‍👧‍👦Referral','📥Withdrawal'],['💳Wallet💳']]
 
     reply_markup = ReplyKeyboardMarkup(keys, resize_keyboard=True)
-    update.message.reply_text("میتونی شروع کنی😍", reply_markup=reply_markup)
+    update.message.reply_text("Wellcome😍", reply_markup=reply_markup)
 
 @show_chat_action(ChatAction.TYPING)
 def two(update, context):
     txt = update.message.text
     chat_id = update.effective_chat.id
     query=update.callback_query
-    if txt == 'اطلاعات کاربر👤':
+    if txt == 'User information👤':
         rs = select(chat_id)
         if rs:
             username = update.effective_chat.username
@@ -169,60 +166,57 @@ def two(update, context):
             sub = int(rs[0][1])
             blc=rs[0][6]
             
-            update.message.reply_text(f"🔰آیدی: {username}\n👤کاربر: {name}\n 📊تعداد زیرمجموعه‌ها: {sub} \n 💰موجودی  :{blc} SHIB")
-    elif txt == '📥برداشت':
+            update.message.reply_text(f"🔰username: {username}\n👤name: {name}\n 📊Referral Statistics: {sub} \n 💰amount :{blc} SHIB")
+    elif txt == '📥Withdrawal':
         rs = select(chat_id)
         if rs[0][1] >= 2 and rs[0][6]>=100000:
             if if_wallet_exist(chat_id): 
-            #تعداد زیر مجموعه برای برداشت و مقدار موجودی برای یرداشت
-                keys = [['بازگشت']]
+                keys = [['🔙Back']]
                 reply_markup = ReplyKeyboardMarkup(keys, resize_keyboard=True)
-                update.message.reply_text(f"مقدار برداشت را وارد کنید:", reply_markup=reply_markup)
+                update.message.reply_text(f"Enter the withdrawal amount:", reply_markup=reply_markup)
                 return WALLET_STATE
             else:
-                update.message.reply_text("ولت شما تنظیم نشده است❗️ ابتدا ولت خود را با دکمه کیف پول تنظیم کنید .")
+                update.message.reply_text("Your voltage is not set ❗️ First, set your voltage with the wallet button.")
         else:
-            update.message.reply_text(f"برای حداقل برداشت باید   2 زیرمجموعه و 100000 shib  داشته باشید.")
-    elif txt == "بازگشت" or txt=='بازگشت🔙':
+            update.message.reply_text(f"You must have at least 2 subcategories and 100,000 shibs to withdraw.")
+    elif txt=='🔙Back':
         show_buttons(update, context)
         return TWO
-    elif txt == 'لینک زیرمجموعه‌گیری🚸':
+    elif txt == '👨‍👩‍👧‍👦Referral':
         link = "<a>"+base_link + str(chat_id)+"</a>"
        
-        form= """به ایردراپ ما خوش اومدید 🙂 \n لینک شما:: \n """ + link
+        form= """Welcome to our airdrop🙂 \n Your Link:: \n """ + link
         context.bot.send_photo(chat_id, photo=open("index.jpg","rb"),caption=form,parse_mode='HTML')
 
-    elif txt == '💳کیف پول💳':
-            
+    elif txt == '💳Wallet💳':
             wallt(update,context)
             return SET_WALLET
     
     elif txt=='/start' or txt=="start":
         show_buttons(update, context)
         return TWO
- 
-    if query.data == 9:
-        print('yes')
         
 def wallt(update,context):    
         chat_id=update.effective_chat.id    
         w=if_wallet_exist(chat_id)
+    
         if w:
-            key = [['🧳تغییر ولت🧳'],['بازگشت🔙']]
+            key = [['🧳Change wallet🧳'],['🔙Back']]
             reply_markup = ReplyKeyboardMarkup(key, resize_keyboard=True)
-            update.message.reply_text(f'کیف پول شما قبلا ثبت شده \n `{w[0]}` \n  اگر قصد تغییر آن را دارید از دکمه ریز استفاده کنید',reply_markup=reply_markup,parse_mode=ParseMode.MARKDOWN_V2)
-        
+            
+            update.message.reply_text(f'Your wallet is already registered \n `{w[0]}` \n If you want to change it, use the small button',reply_markup=reply_markup,parse_mode=ParseMode.MARKDOWN_V2)
+
         else:
-            key = [['تنظیم ولت🧳'],['بازگشت🔙']]
+            key = [['🧳Set wallet🧳'],['🔙Back']]
             reply_markup = ReplyKeyboardMarkup(key, resize_keyboard=True)
-            update.message.reply_text("ولت شما تنظیم نشده است با استفاده از دکمه زیر میتونید ولت خود را تنظیم کنید.",reply_markup=reply_markup)
+            update.message.reply_text("Your voltage is not set. You can set your voltage using the button below.",reply_markup=reply_markup)
                     
         
 @show_chat_action(ChatAction.TYPING)
 def wallet_state(update, context):
     blc = update.message.text
     chat_id = update.effective_chat.id
-    if blc == 'بازگشت':
+    if blc == '🔙Back':
         show_buttons(update, context)
         return TWO
     else:
@@ -238,42 +232,39 @@ def wallet_state(update, context):
                 channels.append(int(i))
             for channel in channels:
                 result = context.bot.get_chat_member(channel, chat_id).status
-                if result != "member" and result != "administrator" and result != 'creator':
+                if result.status != "member" and result.status != "administrator" and result.status != 'creator' and result.status !='restricted':
                     flagm = False       
                     
             if flagm :
                 if bc>=int(blc):
                     if int(blc)>=100000:
                         sub_1 = bc-int(blc)
-                        msg=f"""📥درخواست برداشت \n 👤کاربر ::{update.effective_chat.username}  \n 💰آدرس کیف پول :: \n {row} \n  مقدار:: {blc} shib \n  ✅در حال واریز ... """
-                        update.message.reply_text("ادرس شما به درستی ثبت شد \n واریز بین 10 دقیقه تا 10ساعت طول میکشد \n از صبوری شما متشکریم ")
-                        context.bot.send_message(-1001772946056, msg)
-                        #ایدی عددی ربات پرداخت را در بالا بزارید دقت کنید حتما اولش -100 باشه 
-                        
+                        msg=f"""📥withdrawal request \n 👤 User ::{update.effective_chat.username}  \n 💰 Wallet address :: \n {row} \n  💰the amount of:: {blc} shib \n  ✅Paying ... """
+                        update.message.reply_text("Your address has been registered correctly \n The deposit takes between 10 minutes and 10 hours \n Thank you for your patience.")
+                        context.bot.send_message(Wallet_pay, msg)
                         clear_sub_number(chat_id,sub_1)
                         show_buttons(update, context)
                         return TWO     
                     else:
-                        update.message.reply_text('حداقل برداشت 100000 shib  میباشد')
+                        update.message.reply_text('The minimum withdrawal is 100,000 Shib.')
                         
                 else:
-                    update.message.reply_text('مقدار وارد شده بیشتر از موجودی شما است')
+                    update.message.reply_text('The amount entered is greater than your balance')
             elif not flagm :
                 if bc>=int(blc):
                     if int(blc)>=100000:    
                         sub_1 = bc-int(blc) 
-                        update.message.reply_text(" به دلیل لف دادن از کانالهای ربات واریز برای شما انجام نخواهد شد. \n با پشتیبانی در تماس باشید ")
-                        msg = f""" درخواست برداشت 📥 \n کاربر ::  {update.effective_chat.username} \n  آدرس کیف پول :: \n {row} \n  مقدار :: {blc}  \n واریز نشد. ❌ \n دلیل :لف دادن از کانالها """
-                        context.bot.send_message(-1001772946056, msg)
-                        #ایدی عددی ربات پرداخت را در بالا بزارید دقت کنید حتما اولش -100 باشه 
+                        update.message.reply_text("No deposit will be made for you due to boasting from robot channels. \n Contact support")
+                        msg = f""" 📥withdrawal request \n 👤 User ::  {update.effective_chat.username} \n  💰 Wallet address:: \n {row} \n  💰the amount of :: {blc}  \n not paid ❌ \n Reason: leaving the channels"""
+                        context.bot.send_message(Wallet_pay, msg)
                         clear_sub_number(chat_id,sub_1)
                         show_buttons(update, context)
                         return TWO
                     else:
-                            update.message.reply_text('حداقل برداشت 100000 shib  میباشد')
+                            update.message.reply_text('The minimum withdrawal is 100,000 Shib')
                         
         except Exception as e:
-            update.message.reply_text('مشکلی پیش اومده اگر مقدار را اشتباه وارد کردید دوباره تلاش کنید')
+            update.message.reply_text('There is a problem. If you entered the wrong value, try again')
  
              
          
@@ -281,12 +272,11 @@ def wallet_state(update, context):
 def set_wallet(update, context):
     wallet = update.message.text
     chat_id=update.effective_chat.id
-    
-    if wallet=='بازگشت🔙':
+    if wallet=='🔙Back':
         show_buttons(update,context)
         return TWO
-    elif wallet == '🧳تغییر ولت🧳' or wallet=='تنظیم ولت🧳':
-        update.message.reply_text('ولت خود را بفرستید :')
+    elif wallet == '🧳Change wallet🧳' or wallet=='🧳Set wallet🧳':
+        update.message.reply_text('Send your Wallet:')
         return GET_WALLET
         
 def get_wallet(update,context):
@@ -295,27 +285,26 @@ def get_wallet(update,context):
     if wallet :
         if wallet[0]=='0' and wallet[1]=='x' and len(wallet)>28:
             insert_wallet(wallet,chat_id)
-            update.message.reply_text('ولت ثبت شد ✅')
+            update.message.reply_text('Done✅')
             show_buttons(update,context)
             return TWO
         else:
-            update.message.reply_text('ادرس ارسال شده معتبر نیست')
+            update.message.reply_text('The sent address is not valid')
 
             
-updater = Updater("5605389073:AAEEvqSQeLPWF4qsSsHGM8hH9e0mwsBgN7s")
-#به جای TOKEN توکن ربات خود را بزارید
+updater = Updater(TOKEN)
 
 def shotdown():
     updater.stop()
     updater.is_idle= False
     
-@show_chat_action(ChatAction.TYPING)
-def stop(update,context):
-    threading.Thread(target=shotdown).start()
-
 def error_handler(update, context):
     error = context.error
 
+async def stoped():
+    pass   
+        
+    
 def main():
     
     dp = updater.dispatcher
@@ -325,9 +314,7 @@ def main():
         states= {
             
              JOIN_STATE:[CallbackQueryHandler(join_state)],
-             ONE:[
-                    MessageHandler(Filters.text & ~Filters.command , one)
-                ],
+             ONE:[MessageHandler(Filters.text & ~Filters.command , one)],
             GET_BONUS:[MessageHandler(Filters.text ,get_bonus)],
             TWO:[MessageHandler(Filters.text , two),CallbackQueryHandler(set_wallet)],
             WALLET_STATE:[MessageHandler(Filters.text & ~Filters.command, wallet_state)],
@@ -337,7 +324,7 @@ def main():
             
 
         },
-        fallbacks=[CommandHandler('stop', stop)]
+        fallbacks=[CommandHandler('stoped', stoped)]
     )
 
     conv2 = ConversationHandler(
@@ -358,12 +345,8 @@ def main():
         conversation_timeout=TIMEOUT_VALUE
     )
    
-
-
-    
     dp.add_handler(conv2)
     dp.add_handler(conv)
-    dp.add_handler(CommandHandler("sdstop",stop))
     dp.add_error_handler(error_handler)
     updater.start_polling()
     updater.idle()
